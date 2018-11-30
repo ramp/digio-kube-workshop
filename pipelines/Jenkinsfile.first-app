@@ -1,20 +1,20 @@
 def label = "mypod-${UUID.randomUUID().toString()}"
-podTemplate(label: label, 
-  serviceAccount: 'jenkins-jenkins',
+podTemplate(label: label,
+  serviceAccount: 'rampotla-jenkins',
   containers: [
     containerTemplate(
-      name: 'docker', 
+      name: 'docker',
       image: 'docker:17.12.1-ce',
-      ttyEnabled: true, 
+      ttyEnabled: true,
       command: 'cat',
       envVars: [
         envVar(key: 'DOCKER_HOST', value: 'tcp://dind:2375')
       ]
     ),
     containerTemplate(
-      name: 'helm', 
-      image: 'lachlanevenson/k8s-helm:v2.8.1', 
-      ttyEnabled: true, 
+      name: 'helm',
+      image: 'lachlanevenson/k8s-helm:v2.8.1',
+      ttyEnabled: true,
       command: 'cat'
     )
   ],
@@ -23,8 +23,8 @@ podTemplate(label: label,
   ]) {
 
     node(label) {
-      
-      // Checkout code    
+
+      // Checkout code
       container('jnlp') {
         stage('Checkout code') {
           checkout scm
@@ -35,13 +35,13 @@ podTemplate(label: label,
       // Build and push image
       container('docker') {
         stage('Build image') {
-          env.version = sh returnStdout: true, script: 'cat build.number'            
+          env.version = sh returnStdout: true, script: 'cat build.number'
           withEnv(['VERSION=' + env.version.trim(), 'COMMIT=' + env.commit.trim()]) {
             dir('first-app') {
               sh """
                 docker build \
-                  -t desdrury/first-app:${VERSION}.${COMMIT}  \
-                  -t desdrury/first-app:latest \
+                  -t ramdocker01/first-app:${VERSION}.${COMMIT}  \
+                  -t ramdocker01/first-app:latest \
                   .
               """
             }
@@ -49,10 +49,10 @@ podTemplate(label: label,
         }
 
         stage('Push image') {
-          withDockerRegistry([credentialsId: 'docker-hub-user']) {
+          withDockerRegistry([credentialsId: 'ramdocker01']) {
             withEnv(['VERSION=' + env.VERSION.trim(), 'COMMIT=' + env.COMMIT.trim()]) {
-              sh "docker push desdrury/first-app:${VERSION}.${COMMIT}"
-              sh 'docker push desdrury/first-app:latest'
+              sh "docker push ramdocker01/first-app:${VERSION}.${COMMIT}"
+              sh 'docker push ramdocker01/first-app:latest'
             }
           }
         }
@@ -65,11 +65,11 @@ podTemplate(label: label,
             withEnv(['VERSION=' + env.version.trim(), 'COMMIT=' + env.commit.trim()]) {
               sh """
                 helm upgrade --install first-app \
-                  --namespace production \
-                  --set image.repository=desdrury/first-app \
+                  --namespace rampotla \
+                  --set image.repository=ramdocker01/first-app \
                   --set image.tag=${VERSION}.${COMMIT} \
                   --set ingress.enabled=true \
-                  --set ingress.hosts[0]=first-app.cicd.do.citopro.com \
+                  --set ingress.hosts[0]=first-app.rampotla.do.citopro.com \
                   first-app
               """
             }

@@ -19,9 +19,9 @@ server:
   ingress:
     enabled: true
     hosts:
-      - prometheus.<name>.do.citopro.com
+      - prometheus.rampotla.do.citopro.com
     annotations:
       kubernetes.io/ingress.class: nginx
-  
+
   persistentVolume:
     enabled: true
